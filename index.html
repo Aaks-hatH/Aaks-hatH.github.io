@@ -1,47 +1,125 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Aakshat Hariharan — terminal about</title>
-  <link rel="stylesheet" href="assets/css/style.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aaks-hatH Terminal</title>
+  <style>
+    body {
+      background-color: #000;
+      color: #00ff00;
+      font-family: "Courier New", monospace;
+      margin: 0;
+      padding: 20px;
+      height: 100vh;
+      overflow: hidden;
+    }
+    #terminal {
+      height: 95vh;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.4em;
+    }
+    #input-line {
+      display: flex;
+    }
+    #prompt {
+      color: #00ff00;
+    }
+    #user-input {
+      background: none;
+      border: none;
+      color: #00ff00;
+      font-family: inherit;
+      font-size: 1em;
+      flex: 1;
+      outline: none;
+    }
+    a {
+      color: #0ff;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
-  <main class="terminal" role="region" aria-label="About me terminal">
-    <div class="term-header" aria-hidden="true">
-      <div class="dots" title="window controls">
-        <span class="dot"></span><span class="dot yellow"></span><span class="dot green"></span>
-      </div>
-      <div class="title">aaks-hatH@portfolio — terminal</div>
-    </div>
+  <div id="terminal">
+    <p>Welcome to <strong>Aaks-hatH Terminal</strong> 💻<br>
+    Type <strong>help</strong> to see available commands.<br></p>
+  </div>
 
-    <div class="term-body">
-      <div id="screen" class="screen" tabindex="0" aria-live="polite">
-        <div>Welcome — this is a terminal-style About page for <strong>Aakshat Hariharan</strong> (handle: <code>aaks-hatH</code>).</div>
-        <div style="height:8px"></div>
-        <div id="history"></div>
-        <div id="input-line">
-          <span class="prompt">guest@site:~$</span>
-          <span id="typed" class="cmd" aria-hidden="true"></span><span class="cursor" id="cursor" aria-hidden="true"></span>
-        </div>
-      </div>
+  <div id="input-line">
+    <span id="prompt">aaks-hatH@web:~$ </span>
+    <input type="text" id="user-input" autofocus autocomplete="off" />
+  </div>
 
-      <div class="controls">
-        <button class="btn" data-cmd="about">about</button>
-        <button class="btn" data-cmd="skills">skills</button>
-        <button class="btn" data-cmd="projects">projects</button>
-        <button class="btn" data-cmd="contact">contact</button>
-        <button class="btn" data-cmd="hobbies">hobbies</button>
-        <button class="btn" data-cmd="funfact">funfact</button>
-        <button class="btn" data-cmd="clear">clear</button>
-      </div>
+  <script>
+    const terminal = document.getElementById("terminal");
+    const input = document.getElementById("user-input");
 
-      <div class="footer" aria-hidden="true">
-        © 2025 Aakshat Hariharan — 8th grader · GitHub: <a class="link" href="https://github.com/Aaks-hatH" target="_blank" rel="noopener noreferrer">github.com/Aaks-hatH</a>
-      </div>
-    </div>
-  </main>
+    const commands = {
+      help: `Available commands:
+- about
+- skills
+- projects
+- contact
+- hobbies
+- funfact
+- clear`,
 
-  <script src="assets/js/main.js"></script>
+      about: `Name: Aakshat Hariharan
+Handle: aaks-hatH
+Occupation: 8th Grader | Cyber Intelligence & OSINT Enthusiast
+Learning: C, C#, Python, JavaScript
+Quote: "Yes, I'm not hacking you right now. No, I'm not kidding."`,
+
+      skills: `Main Skills:
+- Cyber Intelligence & OSINT
+- SQL Injection & Phishing Testing
+- JavaScript, Python, C, C#
+Currently learning more about ethical hacking tools and automation.`,
+
+      projects: `Projects:
+1. SQL Injection Scanner
+2. Phishing Test Environment
+3. Terminal-style Portfolio Website
+GitHub: https://github.com/Aaks-hatH`,
+
+      contact: `Email: hariharanaakshat@gmail.com
+GitHub: https://github.com/Aaks-hatH`,
+
+      hobbies: `Hobbies:
+- Listening to music 🎧
+- Coding random scripts
+- Exploring cybersecurity tricks`,
+
+      funfact: `Fun fact: You’ve been staring at this terminal longer than your browser cache lifetime 😉`,
+
+      clear: "clear"
+    };
+
+    function runCommand(cmd) {
+      cmd = cmd.trim().toLowerCase();
+      if (!cmd) return;
+
+      if (cmd === "clear") {
+        terminal.innerHTML = "";
+        return;
+      }
+
+      const output = commands[cmd] || `Command not found: ${cmd}\nType "help" to see all commands.`;
+      terminal.innerHTML += `<div><span style="color:#00ff00">aaks-hatH@web:~$</span> ${cmd}</div><div>${output}</div><br>`;
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    input.addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        runCommand(input.value);
+        input.value = "";
+      }
+    });
+  </script>
 </body>
 </html>

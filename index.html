@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Aaks-hatH Terminal</title>
   <style>
     body {
@@ -14,18 +14,22 @@
       height: 100vh;
       overflow: hidden;
     }
+
     #terminal {
-      height: 95vh;
+      height: 90vh;
       overflow-y: auto;
       white-space: pre-wrap;
       line-height: 1.4em;
     }
+
     #input-line {
       display: flex;
     }
+
     #prompt {
       color: #00ff00;
     }
+
     #user-input {
       background: none;
       border: none;
@@ -34,17 +38,38 @@
       font-size: 1em;
       flex: 1;
       outline: none;
+      caret-color: #00ff00;
+      animation: blink-caret 1s step-end infinite;
     }
+
+    @keyframes blink-caret {
+      50% { opacity: 0; }
+    }
+
     a {
       color: #0ff;
       text-decoration: none;
     }
+
     a:hover {
       text-decoration: underline;
+    }
+
+    #theme-toggle {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: 1px solid #00ff00;
+      color: #00ff00;
+      padding: 5px 10px;
+      cursor: pointer;
+      border-radius: 6px;
     }
   </style>
 </head>
 <body>
+  <button id="theme-toggle">Toggle Theme</button>
   <div id="terminal">
     <p>Welcome to <strong>Aaks-hatH Terminal</strong> 💻<br>
     Type <strong>help</strong> to see available commands.<br></p>
@@ -52,13 +77,12 @@
 
   <div id="input-line">
     <span id="prompt">aaks-hatH@web:~$ </span>
-    <input type="text" id="user-input" autofocus autocomplete="off" />
+    <input type="text" id="user-input" autofocus autocomplete="off">
   </div>
 
   <script>
     const terminal = document.getElementById("terminal");
     const input = document.getElementById("user-input");
-
     const commands = {
       help: `Available commands:
 - about
@@ -67,13 +91,14 @@
 - contact
 - hobbies
 - funfact
-- clear`,
+- clear
+(Use ↑ ↓ for history, Tab to auto-complete, cls = clear)`,
 
       about: `Name: Aakshat Hariharan
 Handle: aaks-hatH
 Occupation: 8th Grader | Cyber Intelligence & OSINT Enthusiast
 Learning: C, C#, Python, JavaScript
-Quote: "Yes, I'm not hacking you right now. No, I'm not kidding."`,
+Quote: "Yes, I'm might be hacking you right now. No, I'm not kidding."`,
 
       skills: `Main Skills:
 - Cyber Intelligence & OSINT
@@ -85,6 +110,7 @@ Currently learning more about ethical hacking tools and automation.`,
 1. SQL Injection Scanner
 2. Phishing Test Environment
 3. Terminal-style Portfolio Website
+4. OSINT Information Tools Contributions
 GitHub: https://github.com/Aaks-hatH`,
 
       contact: `Email: hariharanaakshat@gmail.com
@@ -93,6 +119,7 @@ GitHub: https://github.com/Aaks-hatH`,
       hobbies: `Hobbies:
 - Listening to music 🎧
 - Coding random scripts
+- Playing the Saxophone
 - Exploring cybersecurity tricks`,
 
       funfact: `Fun fact: You’ve been staring at this terminal longer than your browser cache lifetime 😉`,
@@ -100,9 +127,42 @@ GitHub: https://github.com/Aaks-hatH`,
       clear: "clear"
     };
 
+    const aliases = {
+      me: "about",
+      myskills: "skills",
+      myprojects: "projects",
+      mycontact: "contact",
+      myhobbies: "hobbies",
+      myfunfact: "funfact",
+      cls: "clear"
+    };
+
+    const commandKeys = Object.keys(commands);
+    let commandHistory = [];
+    let historyIndex = -1;
+
+    function typeWriter(text, el, callback) {
+      let i = 0;
+      function typing() {
+        if (i < text.length) {
+          el.innerHTML += text.charAt(i);
+          i++;
+          setTimeout(typing, 15);
+        } else if (callback) {
+          callback();
+        }
+      }
+      typing();
+    }
+
     function runCommand(cmd) {
       cmd = cmd.trim().toLowerCase();
       if (!cmd) return;
+
+      if (aliases[cmd]) cmd = aliases[cmd];
+      const promptLine = document.createElement("div");
+      promptLine.innerHTML = `<span style="color:#00ff00">aaks-hatH@web:~$</span> ${cmd}`;
+      terminal.appendChild(promptLine);
 
       if (cmd === "clear") {
         terminal.innerHTML = "";
@@ -110,14 +170,57 @@ GitHub: https://github.com/Aaks-hatH`,
       }
 
       const output = commands[cmd] || `Command not found: ${cmd}\nType "help" to see all commands.`;
-      terminal.innerHTML += `<div><span style="color:#00ff00">aaks-hatH@web:~$</span> ${cmd}</div><div>${output}</div><br>`;
+      const outputDiv = document.createElement("div");
+      terminal.appendChild(outputDiv);
+
+      typeWriter(output, outputDiv, () => {
+        terminal.scrollTop = terminal.scrollHeight;
+      });
+
       terminal.scrollTop = terminal.scrollHeight;
     }
 
-    input.addEventListener("keydown", function (event) {
+    input.addEventListener("keydown", (event) => {
       if (event.key === "Enter") {
-        runCommand(input.value);
+        const cmd = input.value.trim();
+        if (cmd) {
+          commandHistory.push(cmd);
+          historyIndex = commandHistory.length;
+          runCommand(cmd);
+        }
         input.value = "";
+      } else if (event.key === "ArrowUp") {
+        if (historyIndex > 0) {
+          historyIndex--;
+          input.value = commandHistory[historyIndex];
+        }
+      } else if (event.key === "ArrowDown") {
+        if (historyIndex < commandHistory.length - 1) {
+          historyIndex++;
+          input.value = commandHistory[historyIndex];
+        } else {
+          historyIndex = commandHistory.length;
+          input.value = "";
+        }
+      } else if (event.key === "Tab") {
+        event.preventDefault();
+        const userInput = input.value.trim();
+        const match = commandKeys.find((cmd) => cmd.startsWith(userInput));
+        if (match) input.value = match;
+      }
+    });
+
+    // Theme toggle
+    document.getElementById("theme-toggle").addEventListener("click", () => {
+      const body = document.body;
+      if (body.style.backgroundColor === "rgb(0, 0, 0)") {
+        body.style.backgroundColor = "#f0f0f0";
+        body.style.color = "#000";
+        document.getElementById("prompt").style.color = "#000";
+      } else {
+        body.style.backgroundColor = "#000";
+        body.style.color = "#00ff00";
+        document.getElementById("prompt").style.color = "#00ff00";
       }
     });
   </script>

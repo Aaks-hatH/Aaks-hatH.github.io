@@ -1,232 +1,117 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Aaks-hatH Terminal</title>
-  <style>
-    body {
-      background-color: #000;
-      color: #00ff00;
-      font-family: "Courier New", monospace;
-      margin: 0;
-      padding: 20px;
-      height: 100vh;
-      overflow: hidden;
-    }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>System Migration</title>
+    <!-- Fallback redirect if JS fails -->
+    <meta http-equiv="refresh" content="5;url=https://aaks-hath.pages.dev">
+    <style>
+        body {
+            background-color: #0a0a0a;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding: 20px;
+            overflow: hidden;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        #terminal {
+            white-space: pre-wrap;
+            line-height: 1.5;
+            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+        }
 
-    #terminal {
-      height: 90vh;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      line-height: 1.4em;
-    }
+        .cursor {
+            display: inline-block;
+            width: 10px;
+            height: 1.2em;
+            background-color: #00ff00;
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
 
-    #input-line {
-      display: flex;
-    }
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
 
-    #prompt {
-      color: #00ff00;
-    }
+        /* CRT Scanline effect */
+        .scanlines {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 10;
+        }
 
-    #user-input {
-      background: none;
-      border: none;
-      color: #00ff00;
-      font-family: inherit;
-      font-size: 1em;
-      flex: 1;
-      outline: none;
-      caret-color: #00ff00;
-      animation: blink-caret 1s step-end infinite;
-    }
-
-    @keyframes blink-caret {
-      50% { opacity: 0; }
-    }
-
-    a {
-      color: #0ff;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    #theme-toggle {
-      position: absolute;
-      top: 10px;
-      right: 10px;
-      background: none;
-      border: 1px solid #00ff00;
-      color: #00ff00;
-      padding: 5px 10px;
-      cursor: pointer;
-      border-radius: 6px;
-    }
-  </style>
+        a { color: #00ff00; text-decoration: underline; cursor: pointer; }
+        a:hover { background-color: #00ff00; color: #000; }
+    </style>
 </head>
 <body>
-  <button id="theme-toggle">Toggle Theme</button>
-  <div id="terminal">
-    <p>Welcome to <strong>Aaks-hatH Terminal</strong> <br>
-    Type <strong>help</strong> to see available commands.<br></p>
-  </div>
 
-  <div id="input-line">
-    <span id="prompt">aaks-hatH@web:~$ </span>
-    <input type="text" id="user-input" autofocus autocomplete="off">
-  </div>
+    <div class="scanlines"></div>
+    <div id="terminal"></div>
 
-  <script>
-    const terminal = document.getElementById("terminal");
-    const input = document.getElementById("user-input");
-    const commands = {
-      help: `Available commands:
-- about
-- skills
-- projects
-- contact
-- hobbies
-- joke
-- favcolor
-- clear
-(Use ↑ ↓ for history, Tab to auto-complete, cls = clear)`,
+    <script>
+        const terminal = document.getElementById('terminal');
+        const NEW_URL = "https://aaks-hath.pages.dev";
 
-      about: `Name: Aakshat Hariharan
-Handle: aaks-hatH
-Occupation: 8th Grader | Cyber Intelligence & OSINT Enthusiast
-Learning: C, C#, Python, JavaScript
-Quote: "Yes, I'm might be hacking you right now. No, I'm not kidding."`,
+        const logs = [
+            "INITIALIZING MIGRATION PROTOCOL...",
+            "PING 127.0.0.1 ... SUCCESS",
+            "DETECTING LEGACY INFRASTRUCTURE...",
+            "WARNING: SERVER DEPRECATED.",
+            "ESTABLISHING TUNNEL TO CLOUDFLARE EDGE...",
+            "HANDSHAKE COMPLETE [200 OK]",
+            "",
+            `TARGET: ${NEW_URL}`,
+            "",
+            "> REROUTING TRAFFIC..."
+        ];
 
-      skills: `Main Skills:
-- Cyber Intelligence & OSINT
-- SQL Injection & Phishing Testing
-- JavaScript, Python, C, C#
-Currently learning more about ethical hacking tools and automation.`,
+        let lineIndex = 0;
+        let charIndex = 0;
 
-      projects: `Projects:
-1. SQL Injection Scanner
-2. Phishing Test Environment
-3. Terminal-style Portfolio Website
-4. OSINT Information Tools Contributions
-GitHub: https://github.com/Aaks-hatH`,
-
-      contact: `Email: hariharanaakshat@gmail.com
-GitHub: https://github.com/Aaks-hatH`,
-
-      hobbies: `Hobbies:
-- Listening to music 
-- Coding random scripts
-- Playing the Saxophone
-- Exploring cybersecurity tricks`,
-
-      joke: `Funny joke: Social engineering is 90% charm, 10% knowing too much.`,
-
-      favcolor: `Favorite Color: #0d00ff`,
-
-      clear: "clear"
-    };
-
-    const aliases = {
-      me: "about",
-      myskills: "skills",
-      myprojects: "projects",
-      mycontact: "contact",
-      myhobbies: "hobbies",
-      myfunfact: "funfact",
-      myfavcolor: "favcolor",
-      cls: "clear"
-    };
-
-    const commandKeys = Object.keys(commands);
-    let commandHistory = [];
-    let historyIndex = -1;
-
-    function typeWriter(text, el, callback) {
-      let i = 0;
-      function typing() {
-        if (i < text.length) {
-          el.innerHTML += text.charAt(i);
-          i++;
-          setTimeout(typing, 15);
-        } else if (callback) {
-          callback();
+        function typeWriter() {
+            if (lineIndex < logs.length) {
+                const currentLine = logs[lineIndex];
+                
+                if (charIndex < currentLine.length) {
+                    terminal.innerHTML = terminal.innerHTML.replace('<span class="cursor"></span>', '');
+                    terminal.innerHTML += currentLine.charAt(charIndex);
+                    terminal.innerHTML += '<span class="cursor"></span>';
+                    charIndex++;
+                    setTimeout(typeWriter, Math.random() * 30 + 20); // Random typing speed
+                } else {
+                    terminal.innerHTML = terminal.innerHTML.replace('<span class="cursor"></span>', '');
+                    terminal.innerHTML += '<br>';
+                    terminal.innerHTML += '<span class="cursor"></span>';
+                    lineIndex++;
+                    charIndex = 0;
+                    setTimeout(typeWriter, 300); // Pause between lines
+                }
+            } else {
+                // Animation done, redirect
+                setTimeout(() => {
+                    window.location.href = NEW_URL;
+                }, 1000);
+                
+                // Fallback link
+                terminal.innerHTML += `<br><br>[SYSTEM]: If redirection fails, <a href="${NEW_URL}">CLICK HERE</a> to force jump.`;
+            }
         }
-      }
-      typing();
-    }
 
-    function runCommand(cmd) {
-      cmd = cmd.trim().toLowerCase();
-      if (!cmd) return;
-
-      if (aliases[cmd]) cmd = aliases[cmd];
-      const promptLine = document.createElement("div");
-      promptLine.innerHTML = `<span style="color:#00ff00">aaks-hatH@web:~$</span> ${cmd}`;
-      terminal.appendChild(promptLine);
-
-      if (cmd === "clear") {
-        terminal.innerHTML = "";
-        return;
-      }
-
-      const output = commands[cmd] || `Command not found: ${cmd}\nType "help" to see all commands.`;
-      const outputDiv = document.createElement("div");
-      terminal.appendChild(outputDiv);
-
-      typeWriter(output, outputDiv, () => {
-        terminal.scrollTop = terminal.scrollHeight;
-      });
-
-      terminal.scrollTop = terminal.scrollHeight;
-    }
-
-    input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        const cmd = input.value.trim();
-        if (cmd) {
-          commandHistory.push(cmd);
-          historyIndex = commandHistory.length;
-          runCommand(cmd);
-        }
-        input.value = "";
-      } else if (event.key === "ArrowUp") {
-        if (historyIndex > 0) {
-          historyIndex--;
-          input.value = commandHistory[historyIndex];
-        }
-      } else if (event.key === "ArrowDown") {
-        if (historyIndex < commandHistory.length - 1) {
-          historyIndex++;
-          input.value = commandHistory[historyIndex];
-        } else {
-          historyIndex = commandHistory.length;
-          input.value = "";
-        }
-      } else if (event.key === "Tab") {
-        event.preventDefault();
-        const userInput = input.value.trim();
-        const match = commandKeys.find((cmd) => cmd.startsWith(userInput));
-        if (match) input.value = match;
-      }
-    });
-
-    // Theme toggle
-    document.getElementById("theme-toggle").addEventListener("click", () => {
-      const body = document.body;
-      if (body.style.backgroundColor === "rgb(0, 0, 0)") {
-        body.style.backgroundColor = "#f0f0f0";
-        body.style.color = "#000";
-        document.getElementById("prompt").style.color = "#000";
-      } else {
-        body.style.backgroundColor = "#000";
-        body.style.color = "#00ff00";
-        document.getElementById("prompt").style.color = "#00ff00";
-      }
-    });
-  </script>
+        // Start
+        typeWriter();
+    </script>
 </body>
 </html>

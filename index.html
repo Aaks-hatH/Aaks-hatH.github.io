@@ -3,115 +3,241 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System Migration</title>
-    <!-- Fallback redirect if JS fails -->
-    <meta http-equiv="refresh" content="5;url=https://aaks-hath.pages.dev">
+    <title>SYSTEM_MIGRATION // AAKSHAT</title>
+    
+    <!-- Fallback redirect if JS crashes -->
+    <meta http-equiv="refresh" content="6;url=https://aaks-hath.pages.dev">
+    
+    <!-- Cyber Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
     <style>
+        :root {
+            --color-terminal: #00ff41;
+            --color-bg: #050505;
+            --glow: 0 0 10px rgba(0, 255, 65, 0.5), 0 0 2px rgba(0, 255, 65, 0.3);
+        }
+
         body {
-            background-color: #0a0a0a;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--color-bg);
+            color: var(--color-terminal);
+            font-family: 'Share Tech Mono', monospace;
             margin: 0;
-            padding: 20px;
-            overflow: hidden;
+            padding: 0;
             height: 100vh;
+            overflow: hidden;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
         }
-        
+
+        #screen {
+            width: 90%;
+            max-width: 800px;
+            height: 80vh;
+            position: relative;
+            z-index: 2;
+        }
+
         #terminal {
+            font-size: 16px;
+            line-height: 1.4;
+            text-shadow: var(--glow);
             white-space: pre-wrap;
-            line-height: 1.5;
-            text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
         }
 
-        .cursor {
-            display: inline-block;
-            width: 10px;
-            height: 1.2em;
-            background-color: #00ff00;
-            animation: blink 1s infinite;
-            vertical-align: middle;
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
-        /* CRT Scanline effect */
+        /* -----------------------
+           CRT / SCREEN EFFECTS 
+           ----------------------- */
         .scanlines {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%);
+            background: linear-gradient(
+                to bottom,
+                rgba(255,255,255,0),
+                rgba(255,255,255,0) 50%,
+                rgba(0,0,0,0.2) 50%,
+                rgba(0,0,0,0.2)
+            );
             background-size: 100% 4px;
-            pointer-events: none;
             z-index: 10;
+            pointer-events: none;
+            animation: scroll 0.2s linear infinite;
         }
 
-        a { color: #00ff00; text-decoration: underline; cursor: pointer; }
-        a:hover { background-color: #00ff00; color: #000; }
+        .vignette {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
+            z-index: 11;
+            pointer-events: none;
+        }
+
+        .flicker {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 255, 65, 0.02);
+            opacity: 0;
+            z-index: 9;
+            pointer-events: none;
+            animation: flicker 0.15s infinite;
+        }
+
+        /* -----------------------
+           ANIMATIONS 
+           ----------------------- */
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 1em;
+            background: var(--color-terminal);
+            animation: blink 1s step-end infinite;
+            vertical-align: bottom;
+            box-shadow: var(--glow);
+        }
+
+        .highlight {
+            color: #fff;
+            background: var(--color-terminal);
+            color: #000;
+            padding: 0 4px;
+            font-weight: bold;
+        }
+
+        .error { color: #ff3333; text-shadow: 0 0 5px red; }
+        .warning { color: #ffcc00; text-shadow: 0 0 5px orange; }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        @keyframes scroll { 0% { transform: translateY(0); } 100% { transform: translateY(4px); } }
+        @keyframes flicker { 0% { opacity: 0.02; } 5% { opacity: 0.05; } 10% { opacity: 0.01; } 15% { opacity: 0.04; } 100% { opacity: 0.02; } }
+
+        /* Progress Bar */
+        .progress-container {
+            margin-top: 20px;
+            width: 300px;
+            border: 1px solid var(--color-terminal);
+            padding: 2px;
+            display: none; /* Hidden until needed */
+        }
+        .progress-fill {
+            height: 10px;
+            background: var(--color-terminal);
+            width: 0%;
+            box-shadow: var(--glow);
+            transition: width 0.1s;
+        }
     </style>
 </head>
 <body>
 
+    <!-- Visual Effects Layers -->
     <div class="scanlines"></div>
-    <div id="terminal"></div>
+    <div class="vignette"></div>
+    <div class="flicker"></div>
+
+    <div id="screen">
+        <div id="terminal"></div>
+        <div id="loader" class="progress-container">
+            <div class="progress-fill" id="fill"></div>
+        </div>
+    </div>
 
     <script>
         const terminal = document.getElementById('terminal');
+        const loader = document.getElementById('loader');
+        const fill = document.getElementById('fill');
         const NEW_URL = "https://aaks-hath.pages.dev";
 
-        const logs = [
-            "INITIALIZING MIGRATION PROTOCOL...",
-            "PING 127.0.0.1 ... SUCCESS",
-            "DETECTING LEGACY INFRASTRUCTURE...",
-            "WARNING: SERVER DEPRECATED.",
-            "ESTABLISHING TUNNEL TO CLOUDFLARE EDGE...",
-            "HANDSHAKE COMPLETE [200 OK]",
-            "",
-            `TARGET: ${NEW_URL}`,
-            "",
-            "> REROUTING TRAFFIC..."
+        // The "Script"
+        const sequence = [
+            { text: "BIOS DATE 12/12/25 15:42:32 VER 1.0.9", delay: 100 },
+            { text: "CPU: QUANTUM CORE v9, 64-BIT, 128 CORES", delay: 100 },
+            { text: "RAM: 256TB DETECTED - OK", delay: 100 },
+            { text: "----------------------------------------", delay: 200 },
+            { text: "DETECTING HOST ENVIRONMENT...", delay: 600 },
+            { text: "[WARN] LEGACY PROTOCOL DETECTED (GITHUB_PAGES)", delay: 400, type: 'warning' },
+            { text: "INITIATING MIGRATION SEQUENCE...", delay: 800 },
+            { text: " > ESTABLISHING SECURE TUNNEL TO CLOUDFLARE", delay: 400 },
+            { text: " > HANDSHAKE: [SYN] ... [ACK]", delay: 600 },
+            { text: " > ENCRYPTING PAYLOAD (AES-256)", delay: 300 },
+            { text: " > RESOLVING DNS: aaks-hath.pages.dev", delay: 500 },
+            { text: "[SUCCESS] TARGET ACQUIRED.", delay: 400, type: 'highlight' },
+            { text: "TRANSFERRING USER SESSION...", delay: 200, action: 'progress' }
         ];
 
-        let lineIndex = 0;
-        let charIndex = 0;
+        let seqIndex = 0;
 
-        function typeWriter() {
-            if (lineIndex < logs.length) {
-                const currentLine = logs[lineIndex];
-                
-                if (charIndex < currentLine.length) {
-                    terminal.innerHTML = terminal.innerHTML.replace('<span class="cursor"></span>', '');
-                    terminal.innerHTML += currentLine.charAt(charIndex);
-                    terminal.innerHTML += '<span class="cursor"></span>';
-                    charIndex++;
-                    setTimeout(typeWriter, Math.random() * 30 + 20); // Random typing speed
-                } else {
-                    terminal.innerHTML = terminal.innerHTML.replace('<span class="cursor"></span>', '');
-                    terminal.innerHTML += '<br>';
-                    terminal.innerHTML += '<span class="cursor"></span>';
-                    lineIndex++;
-                    charIndex = 0;
-                    setTimeout(typeWriter, 300); // Pause between lines
-                }
-            } else {
-                // Animation done, redirect
+        async function runSequence() {
+            if (seqIndex >= sequence.length) {
+                // Final Redirect
                 setTimeout(() => {
+                    terminal.innerHTML += `<br><br><span class="highlight"> >> JUMPING TO HYPERSPACE << </span>`;
                     window.location.href = NEW_URL;
-                }, 1000);
-                
-                // Fallback link
-                terminal.innerHTML += `<br><br>[SYSTEM]: If redirection fails, <a href="${NEW_URL}">CLICK HERE</a> to force jump.`;
+                }, 500);
+                return;
             }
+
+            const item = sequence[seqIndex];
+            
+            // Handle Progress Bar Special Action
+            if (item.action === 'progress') {
+                terminal.innerHTML = terminal.innerHTML.replace('█', ''); // Remove cursor
+                terminal.innerHTML += item.text + "<br>";
+                loader.style.display = 'block';
+                
+                // Animate Bar
+                let width = 0;
+                const loadInt = setInterval(() => {
+                    width += Math.random() * 5;
+                    if(width > 100) width = 100;
+                    fill.style.width = width + "%";
+                    
+                    if (width === 100) {
+                        clearInterval(loadInt);
+                        seqIndex++;
+                        runSequence(); // Continue
+                    }
+                }, 50);
+                return;
+            }
+
+            // Typewriter Effect for Text
+            let currentText = "";
+            let charIdx = 0;
+            
+            // Remove old cursor
+            terminal.innerHTML = terminal.innerHTML.replace('<span class="cursor">█</span>', '');
+
+            // Create line element
+            const line = document.createElement('div');
+            if (item.type) line.className = item.type;
+            terminal.appendChild(line);
+
+            const typeChar = () => {
+                if (charIdx < item.text.length) {
+                    currentText += item.text.charAt(charIdx);
+                    line.innerHTML = currentText + '<span class="cursor">█</span>';
+                    charIdx++;
+                    setTimeout(typeChar, 15); // Typing speed
+                } else {
+                    // Line finished
+                    setTimeout(() => {
+                        seqIndex++;
+                        runSequence();
+                    }, item.delay);
+                }
+            };
+            
+            typeChar();
         }
 
         // Start
-        typeWriter();
+        setTimeout(runSequence, 500);
+
     </script>
 </body>
 </html>

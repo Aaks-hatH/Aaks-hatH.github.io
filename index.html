@@ -3,241 +3,300 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SYSTEM_MIGRATION // AAKSHAT</title>
+    <title>SECURE_UPLINK // MIGRATION</title>
+    <meta http-equiv="refresh" content="7;url=https://aaks-hath.pages.dev">
     
-    <!-- Fallback redirect if JS crashes -->
-    <meta http-equiv="refresh" content="6;url=https://aaks-hath.pages.dev">
-    
-    <!-- Cyber Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;800&display=swap" rel="stylesheet">
 
     <style>
         :root {
-            --color-terminal: #00ff41;
-            --color-bg: #050505;
-            --glow: 0 0 10px rgba(0, 255, 65, 0.5), 0 0 2px rgba(0, 255, 65, 0.3);
+            --primary: #00ff41;
+            --secondary: #008F11;
+            --bg: #0a0a0a;
+            --glitch-1: #ff00ff;
+            --glitch-2: #00ffff;
         }
 
         body {
-            background-color: var(--color-bg);
-            color: var(--color-terminal);
-            font-family: 'Share Tech Mono', monospace;
+            background-color: var(--bg);
+            color: var(--primary);
+            font-family: 'JetBrains Mono', monospace;
             margin: 0;
-            padding: 0;
             height: 100vh;
             overflow: hidden;
             display: flex;
+            flex-direction: column;
             justify-content: center;
             align-items: center;
-            text-transform: uppercase;
+            perspective: 1000px; /* 3D depth */
         }
 
-        #screen {
-            width: 90%;
-            max-width: 800px;
-            height: 80vh;
+        /* -----------------------
+           3D GRID BACKGROUND
+           ----------------------- */
+        .grid-plane {
+            position: absolute;
+            bottom: -30%;
+            left: -50%;
+            width: 200%;
+            height: 100%;
+            background-image: 
+                linear-gradient(var(--secondary) 1px, transparent 1px),
+                linear-gradient(90deg, var(--secondary) 1px, transparent 1px);
+            background-size: 40px 40px;
+            transform: rotateX(60deg);
+            opacity: 0.15;
+            animation: planeMove 2s linear infinite;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        @keyframes planeMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 40px; }
+        }
+
+        /* -----------------------
+           MAIN TERMINAL CONTAINER
+           ----------------------- */
+        #container {
+            width: 800px;
+            max-width: 90%;
+            z-index: 10;
             position: relative;
-            z-index: 2;
+        }
+
+        #header {
+            border-bottom: 2px solid var(--secondary);
+            display: flex;
+            justify-content: space-between;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            font-size: 12px;
+            letter-spacing: 2px;
+            opacity: 0.7;
         }
 
         #terminal {
-            font-size: 16px;
-            line-height: 1.4;
-            text-shadow: var(--glow);
-            white-space: pre-wrap;
+            font-size: 14px;
+            line-height: 1.6;
+            min-height: 200px;
+            text-shadow: 0 0 5px var(--primary);
         }
 
         /* -----------------------
-           CRT / SCREEN EFFECTS 
+           GLITCH TEXT EFFECT
+           ----------------------- */
+        .glitch-text {
+            position: relative;
+            font-weight: 800;
+            color: #fff;
+            font-size: 24px;
+            letter-spacing: 1px;
+            display: inline-block;
+        }
+        
+        .glitch-text::before, .glitch-text::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--bg);
+        }
+        
+        .glitch-text::before {
+            left: 2px; text-shadow: -1px 0 var(--glitch-1);
+            clip: rect(24px, 550px, 90px, 0);
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+        
+        .glitch-text::after {
+            left: -2px; text-shadow: -1px 0 var(--glitch-2);
+            clip: rect(85px, 550px, 140px, 0);
+            animation: glitch-anim 2s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim {
+            0% { clip: rect(10px, 9999px, 30px, 0); }
+            20% { clip: rect(80px, 9999px, 100px, 0); }
+            40% { clip: rect(40px, 9999px, 60px, 0); }
+            60% { clip: rect(10px, 9999px, 40px, 0); }
+            80% { clip: rect(60px, 9999px, 90px, 0); }
+            100% { clip: rect(20px, 9999px, 50px, 0); }
+        }
+
+        /* -----------------------
+           PROGRESS LOADER
+           ----------------------- */
+        .loader-box {
+            width: 100%;
+            height: 4px;
+            background: #111;
+            margin-top: 30px;
+            position: relative;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .loader-bar {
+            height: 100%;
+            background: var(--primary);
+            width: 0%;
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* -----------------------
+           OVERLAYS
            ----------------------- */
         .scanlines {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: linear-gradient(
-                to bottom,
-                rgba(255,255,255,0),
-                rgba(255,255,255,0) 50%,
-                rgba(0,0,0,0.2) 50%,
-                rgba(0,0,0,0.2)
-            );
-            background-size: 100% 4px;
-            z-index: 10;
-            pointer-events: none;
-            animation: scroll 0.2s linear infinite;
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: repeating-linear-gradient(0deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2) 1px, transparent 1px, transparent 2px);
+            pointer-events: none; z-index: 99; opacity: 0.6;
         }
-
-        .vignette {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.8) 100%);
-            z-index: 11;
-            pointer-events: none;
-        }
-
-        .flicker {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+        
+        .crt-flicker {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0, 255, 65, 0.02);
-            opacity: 0;
-            z-index: 9;
-            pointer-events: none;
-            animation: flicker 0.15s infinite;
+            pointer-events: none; z-index: 98;
+            animation: flicker 0.1s infinite;
         }
 
-        /* -----------------------
-           ANIMATIONS 
-           ----------------------- */
+        @keyframes flicker {
+            0% { opacity: 0.1; } 50% { opacity: 0.2; } 100% { opacity: 0.1; }
+        }
+
         .cursor {
-            display: inline-block;
-            width: 8px;
-            height: 1em;
-            background: var(--color-terminal);
-            animation: blink 1s step-end infinite;
-            vertical-align: bottom;
-            box-shadow: var(--glow);
+            display: inline-block; width: 10px; height: 1em; background: var(--primary);
+            animation: blink 0.8s infinite;
         }
-
-        .highlight {
-            color: #fff;
-            background: var(--color-terminal);
-            color: #000;
-            padding: 0 4px;
-            font-weight: bold;
-        }
-
-        .error { color: #ff3333; text-shadow: 0 0 5px red; }
-        .warning { color: #ffcc00; text-shadow: 0 0 5px orange; }
-
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
-        @keyframes scroll { 0% { transform: translateY(0); } 100% { transform: translateY(4px); } }
-        @keyframes flicker { 0% { opacity: 0.02; } 5% { opacity: 0.05; } 10% { opacity: 0.01; } 15% { opacity: 0.04; } 100% { opacity: 0.02; } }
 
-        /* Progress Bar */
-        .progress-container {
-            margin-top: 20px;
-            width: 300px;
-            border: 1px solid var(--color-terminal);
-            padding: 2px;
-            display: none; /* Hidden until needed */
-        }
-        .progress-fill {
-            height: 10px;
-            background: var(--color-terminal);
-            width: 0%;
-            box-shadow: var(--glow);
-            transition: width 0.1s;
-        }
+        /* Utility Colors */
+        .dim { color: #555; }
+        .white { color: #fff; }
+        .warn { color: #FFA500; }
+        .err { color: #FF0000; }
     </style>
 </head>
 <body>
 
-    <!-- Visual Effects Layers -->
+    <div class="grid-plane"></div>
     <div class="scanlines"></div>
-    <div class="vignette"></div>
-    <div class="flicker"></div>
+    <div class="crt-flicker"></div>
 
-    <div id="screen">
+    <div id="container">
+        <div id="header">
+            <span>// PROTOCOL: MIGRATION</span>
+            <span>SECURE_SHELL_v4.0</span>
+            <span>ID: <span id="sess-id"></span></span>
+        </div>
+
         <div id="terminal"></div>
-        <div id="loader" class="progress-container">
-            <div class="progress-fill" id="fill"></div>
+        
+        <div class="loader-box" id="loader">
+            <div class="loader-bar" id="bar"></div>
         </div>
     </div>
 
     <script>
-        const terminal = document.getElementById('terminal');
+        const term = document.getElementById('terminal');
         const loader = document.getElementById('loader');
-        const fill = document.getElementById('fill');
+        const bar = document.getElementById('bar');
         const NEW_URL = "https://aaks-hath.pages.dev";
+        
+        // Generate random session ID
+        document.getElementById('sess-id').innerText = Math.floor(Math.random()*999999).toString(16).toUpperCase();
 
-        // The "Script"
-        const sequence = [
-            { text: "BIOS DATE 12/12/25 15:42:32 VER 1.0.9", delay: 100 },
-            { text: "CPU: QUANTUM CORE v9, 64-BIT, 128 CORES", delay: 100 },
-            { text: "RAM: 256TB DETECTED - OK", delay: 100 },
-            { text: "----------------------------------------", delay: 200 },
-            { text: "DETECTING HOST ENVIRONMENT...", delay: 600 },
-            { text: "[WARN] LEGACY PROTOCOL DETECTED (GITHUB_PAGES)", delay: 400, type: 'warning' },
-            { text: "INITIATING MIGRATION SEQUENCE...", delay: 800 },
-            { text: " > ESTABLISHING SECURE TUNNEL TO CLOUDFLARE", delay: 400 },
-            { text: " > HANDSHAKE: [SYN] ... [ACK]", delay: 600 },
-            { text: " > ENCRYPTING PAYLOAD (AES-256)", delay: 300 },
-            { text: " > RESOLVING DNS: aaks-hath.pages.dev", delay: 500 },
-            { text: "[SUCCESS] TARGET ACQUIRED.", delay: 400, type: 'highlight' },
-            { text: "TRANSFERRING USER SESSION...", delay: 200, action: 'progress' }
+        const logs = [
+            { text: "ESTABLISHING UPLINK...", speed: 30 },
+            { text: "RESOLVING HOST: 127.0.0.1 -> CLOUDFLARE_EDGE", speed: 20 },
+            { text: "AUTHENTICATING... [OK]", speed: 10, class: 'white' },
+            { text: "DETECTING LEGACY INFRASTRUCTURE...", speed: 10 },
+            { text: "WARNING: GITHUB_PAGES DEPRECATED", speed: 5, class: 'warn' },
+            { text: "INITIATING TRANSFER PROTOCOL (HTTP/3)", speed: 20 },
+            { text: "PACKET_LOSS: 0.00%", speed: 5, class: 'dim' },
+            { text: "ENCRYPTING SESSION DATA...", speed: 30 },
+            { text: "Decrypting Target Coordinates...", speed: 10, decrypt: true, final: "TARGET: aaks-hath.pages.dev" },
+            { text: "", speed: 100 }, // pause
+            { text: "ACCESS GRANTED. REROUTING...", speed: 50, class: 'glitch-text', data: "ACCESS GRANTED" }
         ];
 
-        let seqIndex = 0;
+        let logIndex = 0;
 
-        async function runSequence() {
-            if (seqIndex >= sequence.length) {
-                // Final Redirect
-                setTimeout(() => {
-                    terminal.innerHTML += `<br><br><span class="highlight"> >> JUMPING TO HYPERSPACE << </span>`;
-                    window.location.href = NEW_URL;
-                }, 500);
-                return;
+        async function typeLine(lineData) {
+            const div = document.createElement('div');
+            if (lineData.class) {
+                div.className = lineData.class;
+                if (lineData.data) div.setAttribute('data-text', lineData.data);
             }
+            term.appendChild(div);
 
-            const item = sequence[seqIndex];
-            
-            // Handle Progress Bar Special Action
-            if (item.action === 'progress') {
-                terminal.innerHTML = terminal.innerHTML.replace('█', ''); // Remove cursor
-                terminal.innerHTML += item.text + "<br>";
-                loader.style.display = 'block';
+            // Special Effect: Decrypting Text (Matrix Style)
+            if (lineData.decrypt) {
+                const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+                const targetText = lineData.final;
+                let iterations = 0;
                 
-                // Animate Bar
-                let width = 0;
-                const loadInt = setInterval(() => {
-                    width += Math.random() * 5;
-                    if(width > 100) width = 100;
-                    fill.style.width = width + "%";
-                    
-                    if (width === 100) {
-                        clearInterval(loadInt);
-                        seqIndex++;
-                        runSequence(); // Continue
-                    }
-                }, 50);
-                return;
+                return new Promise(resolve => {
+                    const interval = setInterval(() => {
+                        div.innerText = targetText
+                            .split("")
+                            .map((letter, index) => {
+                                if (index < iterations) return targetText[index];
+                                return chars[Math.floor(Math.random() * chars.length)];
+                            })
+                            .join("");
+                        
+                        if (iterations >= targetText.length) {
+                            clearInterval(interval);
+                            resolve();
+                        }
+                        iterations += 1 / 3; // Speed of decryption
+                    }, 30);
+                });
             }
 
-            // Typewriter Effect for Text
-            let currentText = "";
-            let charIdx = 0;
-            
-            // Remove old cursor
-            terminal.innerHTML = terminal.innerHTML.replace('<span class="cursor">█</span>', '');
+            // Standard Typewriter
+            let text = lineData.text;
+            let i = 0;
+            return new Promise(resolve => {
+                const interval = setInterval(() => {
+                    div.innerHTML = text.substring(0, i) + '<span class="cursor"></span>';
+                    // Remove cursor from previous lines
+                    const prevCursors = term.querySelectorAll('.cursor');
+                    prevCursors.forEach((c, idx) => {
+                        if (idx < prevCursors.length - 1) c.remove();
+                    });
 
-            // Create line element
-            const line = document.createElement('div');
-            if (item.type) line.className = item.type;
-            terminal.appendChild(line);
-
-            const typeChar = () => {
-                if (charIdx < item.text.length) {
-                    currentText += item.text.charAt(charIdx);
-                    line.innerHTML = currentText + '<span class="cursor">█</span>';
-                    charIdx++;
-                    setTimeout(typeChar, 15); // Typing speed
-                } else {
-                    // Line finished
-                    setTimeout(() => {
-                        seqIndex++;
-                        runSequence();
-                    }, item.delay);
-                }
-            };
-            
-            typeChar();
+                    i++;
+                    if (i > text.length) {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, lineData.speed);
+            });
         }
 
-        // Start
-        setTimeout(runSequence, 500);
+        async function runSequence() {
+            for (const log of logs) {
+                await typeLine(log);
+            }
+            
+            // Show Loading Bar
+            loader.style.display = 'block';
+            let width = 0;
+            const loadInt = setInterval(() => {
+                width += 2;
+                bar.style.width = width + "%";
+                if (width >= 100) {
+                    clearInterval(loadInt);
+                    setTimeout(() => {
+                        window.location.href = NEW_URL;
+                    }, 500);
+                }
+            }, 20);
+        }
 
+        runSequence();
     </script>
 </body>
 </html>
